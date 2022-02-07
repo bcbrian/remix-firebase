@@ -6,3 +6,8 @@ node_modules
 
 /prisma/dev.db
 .env
+
+# firebase
+# firebase-debug.log
+# firestore-debug.log
+# ui-debug.log

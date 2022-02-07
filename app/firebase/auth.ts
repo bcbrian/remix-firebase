@@ -1,145 +1,78 @@
-import React from "react";
-import { firebase } from "./";
+import { getAuth } from "./firebase.server";
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  onIdTokenChanged,
+} from "firebase/auth";
+import type { User } from "firebase/auth";
 
-export const AUTHENTICATING = "AUTHENTICATING";
-export const UserContext = React.createContext<string|null>(AUTHENTICATING);
-// TODO: https://firebase.google.com/docs/web/modular-upgrade
-export function signInViaGitHubPopUp() {
-  const provider = new firebase.auth.GithubAuthProvider();
-  firebase
-    .auth()
-    .signInWithPopup(provider)
-    .then(function(result) {
-      // This gives you a GitHub Access Token. You can use it to access the GitHub API.
-      // const token = result.credential.accessToken;
-      // The signed-in user info.
-      const user = result.user;
-      // ...
-    })
-    .catch(function(error) {
-      // Handle Errors here.
-      // const errorCode = error.code;
-      // const errorMessage = error.message;
-      // // The email of the user's account used.
-      // const email = error.email;
-      // // The firebase.auth.AuthCredential type that was used.
-      // const credential = error.credential;
-      // ...
-    });
+export async function emailAndPasswordSignUp({
+  email,
+  password,
+}): Promise<User> {
+  const auth = getAuth();
+  const userCredential = await createUserWithEmailAndPassword(
+    auth,
+    email,
+    password
+  );
+  const user = userCredential.user;
+  return user;
 }
-export function signInViaGitHubRedirect() {
-  const provider = new firebase.auth.GithubAuthProvider();
-  firebase.auth().signInWithRedirect(provider);
-}
+export async function emailAndPasswordSignIn({
+  email,
+  password,
+}): Promise<User> {
+  const auth = getAuth();
 
-export function getRedirectResult(callback) {
-  firebase
-    .auth()
-    .getRedirectResult()
-    .then(function({ user }) {
-      callback && typeof callback === "function" && callback(user);
-    })
-    .catch(function(error) {
-      // Handle Errors here.
-      console.log(error);
-    });
-}
+  const userCredential = await signInWithEmailAndPassword(
+    auth,
+    email,
+    password
+  );
 
-export function signInWithEmailLink(email) {
-  const actionCodeSettings = {
-    // URL you want to redirect back to. The domain (www.example.com) for this
-    // URL must be whitelisted in the Firebase Console.
-    url: "https://1r9mg.csb.app",
-    // This must be true.
-    handleCodeInApp: true
-  };
-  firebase
-    .auth()
-    .sendSignInLinkToEmail(email, actionCodeSettings)
-    .then(function() {
-      // The link was successfully sent. Inform the user.
-      // Save the email locally so you don't need to ask the user for it again
-      // if they open the link on the same device.
-      window.localStorage.setItem("emailForSignIn", email);
-    })
-    .catch(function(error) {
-      // Some error occurred, you can inspect the code: error.code
-    });
-}
-
-export function handleSignInWithEmailLink() {
-  // Confirm the link is a sign-in with email link.
-  if (firebase.auth().isSignInWithEmailLink(window.location.href)) {
-    // Additional state parameters can also be passed via URL.
-    // This can be used to continue the user's intended action before triggering
-    // the sign-in operation.
-    // Get the email if available. This should be available if the user completes
-    // the flow on the same device where they started it.
-    const email = window.localStorage.getItem("emailForSignIn");
-    if (!email) {
-      // User opened the link on a different device. To prevent session fixation
-      // attacks, ask the user to provide the associated email again. For example:
-      // email = window.prompt("Please provide your email for confirmation");
-    }
-    // The client SDK will parse the code from the link for you.
-    firebase
-      .auth()
-      .signInWithEmailLink(email, window.location.href)
-      .then(function(result) {
-        // Clear email from storage.
-        window.localStorage.removeItem("emailForSignIn");
-        // You can access the new user via result.user
-        // Additional user info profile not available via:
-        // result.additionalUserInfo.profile == null
-        // You can check if the user is new or existing:
-        // result.additionalUserInfo.isNewUser
-      })
-      .catch(function(error) {
-        // Some error occurred, you can inspect the code: error.code
-        // Common errors could be invalid email and invalid or expired OTPs.
-      });
-  }
-}
-
-export function emailAndPasswordSignUp(email, password) {
-  firebase
-    .auth()
-    .createUserWithEmailAndPassword(email, password)
-    .catch(function(error) {
-      // Handle Errors here.
-      // const errorCode = error.code;
-      // const errorMessage = error.message;
-      // ...
-    });
-}
-export function emailAndPasswordSignIn(email, password) {
-  firebase
-    .auth()
-    .signInWithEmailAndPassword(email, password)
-    .catch(function(error) {
-      // Handle Errors here.
-      // const errorCode = error.code;
-      // const errorMessage = error.message;
-      // ...
-    });
+  const user = userCredential.user;
+  return user;
 }
 
 export function signOut() {
-  firebase
-    .auth()
+  const auth = getAuth();
+
+  auth
     .signOut()
-    .then(function() {
+    .then(function () {
       // Sign-out successful.
       // console.log("signed out!");
     })
-    .catch(function(error) {
+    .catch(function (error) {
       // An error happened.
     });
 }
 
-export function onAuthStateChanged(cb) {
-  return firebase.auth().onAuthStateChanged(function(user) {
-    // console.log("YIKES!", user);
+export function handleAuthStateChanged(cb) {
+  const auth = getAuth();
+
+  return onAuthStateChanged(auth, function (user) {
     cb && typeof cb === "function" && cb(user);
   });
+}
+
+export function handleIdTokenChanged(cb) {
+  const auth = getAuth();
+
+  return onIdTokenChanged(auth, function (user) {
+    cb && typeof cb === "function" && cb(user);
+  });
+}
+
+export function getCurrentUser(){
+  const auth = getAuth();
+
+  return auth.currentUser;
+}
+
+export async function triggerTokenRefresh(){
+  const user = getCurrentUser();
+  if (user) await user.getIdToken(true);
 }

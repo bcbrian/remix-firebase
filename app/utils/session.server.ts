@@ -1,38 +1,26 @@
-import bcrypt from "bcrypt";
+import { DecodedIdToken } from "firebase-admin/lib/auth/token-verifier";
+import type { User } from "firebase/auth";
+import { createCookieSessionStorage, redirect } from "remix";
 import {
-  createCookieSessionStorage,
-  redirect
-} from "remix";
-import { db } from "./db.server";
+  emailAndPasswordSignIn,
+  emailAndPasswordSignUp,
+} from "~/firebase/auth";
+import { getAuth } from "~/firebase/firebaseAdmin.server";
 
 type LoginForm = {
   username: string;
   password: string;
 };
 
-export async function register({
-  username,
-  password
-}: LoginForm) {
-  let passwordHash = await bcrypt.hash(password, 10);
-  return db.user.create({
-    data: { username, passwordHash }
-  });
+export interface AuthUser extends DecodedIdToken {}
+
+export async function register({ username, password }: LoginForm) {
+  const user = await emailAndPasswordSignUp({ email: username, password });
+  return user;
 }
 
-export async function login({
-  username,
-  password
-}: LoginForm) {
-  let user = await db.user.findUnique({
-    where: { username }
-  });
-  if (!user) return null;
-  let isCorrectPassword = await bcrypt.compare(
-    password,
-    user.passwordHash
-  );
-  if (!isCorrectPassword) return null;
+export async function login({ username, password }: LoginForm): Promise<User> {
+  const user = await emailAndPasswordSignIn({ email: username, password });
   return user;
 }
 
@@ -43,78 +31,78 @@ if (!sessionSecret) {
 
 let storage = createCookieSessionStorage({
   cookie: {
-    name: "RJ_session",
+    name: "cs_session",
     secure: true,
     secrets: [sessionSecret],
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
-    httpOnly: true
-  }
+    httpOnly: true,
+  },
 });
 
 export function getUserSession(request: Request) {
   return storage.getSession(request.headers.get("Cookie"));
 }
 
-export async function getUserId(request: Request) {
+export async function getUserToken(request: Request) {
   let session = await getUserSession(request);
-  let userId = session.get("userId");
-  if (!userId || typeof userId !== "string") return null;
-  return userId;
+  let userToken = session.get("userToken");
+  if (!userToken || typeof userToken !== "string") return null;
+  return userToken;
+}
+
+export async function getAuthUser(request: Request): Promise<AuthUser | null> {
+  let userToken = await getUserToken(request);
+  if (typeof userToken !== "string") {
+    return null;
+  }
+
+  try {
+    const authedUser = await getAuth().verifyIdToken(userToken);
+    return authedUser;
+  } catch (e) {
+    console.log("getAuthUser error", e);
+    return null;
+  }
+}
+
+export async function getUserId(request: Request): Promise<string | null> {
+  try {
+    let authUser = await getAuthUser(request);
+    return authUser?.uid || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function requireUserId(
   request: Request,
   redirectTo: string = new URL(request.url).pathname
 ) {
-  let session = await getUserSession(request);
-  let userId = session.get("userId");
+  let userId = await getUserId(request);
   if (!userId || typeof userId !== "string") {
-    let searchParams = new URLSearchParams([
-      ["redirectTo", redirectTo]
-    ]);
-    throw redirect(`/login?${searchParams}`);
+    let searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
+    throw redirect(`/sign/in?${searchParams}`);
   }
   return userId;
 }
 
-export async function getUser(request: Request) {
-  let userId = await getUserId(request);
-  if (typeof userId !== "string") {
-    return null;
-  }
-
-  try {
-    let user = await db.user.findUnique({
-      where: { id: userId }
-    });
-    return user;
-  } catch {
-    throw logout(request);
-  }
-}
-
 export async function logout(request: Request) {
-  let session = await storage.getSession(
-    request.headers.get("Cookie")
-  );
-  return redirect("/login", {
+  let session = await storage.getSession(request.headers.get("Cookie"));
+  return redirect("/sign/in", {
     headers: {
-      "Set-Cookie": await storage.destroySession(session)
-    }
+      "Set-Cookie": await storage.destroySession(session),
+    },
   });
 }
 
-export async function createUserSession(
-  userId: string,
-  redirectTo: string
-) {
+export async function createUserSession(userToken: string, redirectTo: string) {
   let session = await storage.getSession();
-  session.set("userId", userId);
+  session.set("userToken", userToken);
   return redirect(redirectTo, {
     headers: {
-      "Set-Cookie": await storage.commitSession(session)
-    }
+      "Set-Cookie": await storage.commitSession(session),
+    },
   });
 }

@@ -1,55 +1,42 @@
-import type { LinksFunction, MetaFunction } from "remix";
+import { LoaderFunction, MetaFunction, useLoaderData } from "remix";
 import { Links, LiveReload, Outlet, useCatch, Meta, Scripts } from "remix";
-
-import globalStylesUrl from "./styles/global.css";
-import globalMediumStylesUrl from "./styles/global-medium.css";
-import globalLargeStylesUrl from "./styles/global-large.css";
-import {
-  AUTHENTICATING,
-  onAuthStateChanged,
-  UserContext,
-} from "~/firebase/auth";
-import { Box, createTheme, ThemeProvider } from "@mui/material";
-import { useEffect, useState } from "react";
-import { COLORS } from "~/theme/colors";
+import globalStylesUrl from "~/styles/global.css";
+import { AuthProvider } from "~/firebase/AuthProvider";
+import { ThemeProvider } from "@mui/material";
 import { AppBar } from "~/components/AppBar";
+import { theme } from "./theme";
+import { AuthUser, getAuthUser } from "./utils/session.server";
 
-export const links: LinksFunction = () => {
+export function links() {
   return [
-    // {
-    //   rel: "stylesheet",
-    //   href: globalStylesUrl,
-    // },
-    // {
-    //   rel: "stylesheet",
-    //   href: globalMediumStylesUrl,
-    //   media: "print, (min-width: 640px)",
-    // },
-    // {
-    //   rel: "stylesheet",
-    //   href: globalLargeStylesUrl,
-    //   media: "screen and (min-width: 1024px)",
-    // },
+    {
+      rel: "stylesheet",
+      href: "https://unpkg.com/modern-css-reset@1.4.0/dist/reset.min.css",
+    },
+    {
+      rel: "stylesheet",
+      href: globalStylesUrl,
+    },
   ];
-};
+}
 
 export const meta: MetaFunction = () => {
-  const description = `Learn Remix and laugh at the same time!`;
+  const description = `Code Sagas is a place to learn a million and one ways to code.`;
   return {
     description,
-    keywords: "Remix,jokes",
-    "twitter:image": "https://remix-jokes.lol/social.png",
+    keywords: "code,sagas,learn",
+    "twitter:image": "https://codesagas.com/social.png",
     "twitter:card": "summary_large_image",
-    "twitter:creator": "@remix_run",
-    "twitter:site": "@remix_run",
-    "twitter:title": "Remix Jokes",
+    "twitter:creator": "@codesagas",
+    "twitter:site": "@codesagas",
+    "twitter:title": "Code Sagas",
     "twitter:description": description,
   };
 };
 
 function Document({
   children,
-  title = `Remix: So great, it's funny!`,
+  title = `Code Sagas | Copy/Pasta/Twerk`,
 }: {
   children: React.ReactNode;
   title?: string;
@@ -71,74 +58,40 @@ function Document({
   );
 }
 
-const theme = createTheme({
-  palette: {
-    mode: "dark",
-    primary: {
-      main: COLORS.PRIMARY,
-    },
-    secondary: {
-      main: COLORS.SECONDARY,
-    },
-    error: {
-      main: COLORS.ERROR,
-    },
-    warning: {
-      main: COLORS.WARNING,
-    },
-    info: {
-      main: COLORS.INFO,
-    },
-    success: {
-      main: COLORS.SUCCESS,
-    },
-    background: {
-      default: COLORS.BACKGROUND.DEFAULT,
-      paper: COLORS.BACKGROUND.PAPER,
-    },
-  },
-  components: {
-    // Name of the component ⚛️
-    MuiButtonBase: {
-      defaultProps: {
-        // The default props to change
-        disableRipple: true, // No more ripple, on the whole application 💣!
-        // variant: "outlined",
-      },
-    },
-    MuiButton: {
-      defaultProps: {
-        // The default props to change
-        variant: "outlined",
-      },
-    },
-  },
-});
+type LoaderData = { user: AuthUser|null };
+
+export const loader: LoaderFunction = async ({ request }) => {
+  const user = await getAuthUser(request);
+
+  const data: LoaderData = {
+    user,
+  };
+  return data;
+};
+
+function Providers({
+  user,
+  children,
+}: {
+  user: AuthUser | null;
+  children: React.ReactNode;
+}) {
+  return (
+    <AuthProvider user={user}>
+      <ThemeProvider theme={theme}>{children}</ThemeProvider>
+    </AuthProvider>
+  );
+}
 
 export default function App() {
-  const [user, setUser] = useState<string | null>(AUTHENTICATING);
+  const { user } = useLoaderData<LoaderData>();
 
-  useEffect(() => {
-    onAuthStateChanged((user) => {
-      return user ? setUser(user) : setUser(null);
-    });
-  }, []);
-  console.log("user", user);
-  if (user === AUTHENTICATING) {
-    return (
-      <Document>
-        <Box />
-      </Document>
-    );
-  }
   return (
     <Document>
-      <UserContext.Provider value={user}>
-        <ThemeProvider theme={theme}>
-          <AppBar />
-          <Outlet />
-        </ThemeProvider>
-      </UserContext.Provider>
+      <Providers user={user}>
+        <AppBar />
+        <Outlet />
+      </Providers>
     </Document>
   );
 }
@@ -168,20 +121,4 @@ export function ErrorBoundary({ error }: { error: Error }) {
       </div>
     </Document>
   );
-}
-
-{
-  /* <UserContext.Provider value={user}>
-      <ThemeProvider theme={theme}>
-        <Router>
-          <Switch>
-            <PrivateRoute path="/dashboard-old" component={DashBoard} />
-            <PrivateRoute path="/dashboard" component={TDADashBoard} />
-            <AuthRoute path="/auth" component={Auth} />
-            <Route path="/" exact component={Index} />
-            <Route render={() => <Box>404</Box>} />
-          </Switch>
-        </Router>
-      </ThemeProvider>
-    </UserContext.Provider> */
 }

@@ -11,6 +11,7 @@
     "paths": {
       "~/*": ["./app/*"]
     },
+    // remove this when we are more confident in the migration
     "noImplicitAny": false,
 
     // Remix takes care of building everything in `remix build`.

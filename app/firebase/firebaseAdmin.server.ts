@@ -8,6 +8,9 @@ if (!getApps().length) {
     process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
     process.env.FIREBASE_AUTH_EMULATOR_HOST="localhost:9099";
   }
+  console.log(">>>",process.env.FIREBASE_PROJECT_ID);
+  console.log(">>>",process.env.FIREBASE_CLIENT_EMAIL);
+  console.log(">>>",process.env.FIREBASE_PRIVATE_KEY);
   app = initializeApp({
     credential: cert({
       privateKey: process.env.FIREBASE_PRIVATE_KEY,

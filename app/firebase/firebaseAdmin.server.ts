@@ -15,7 +15,7 @@ if (!getApps().length) {
     credential: cert({
       privateKey: process.env.FIREBASE_PRIVATE_KEY,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      projectId: JSON.parse(process.env.FIREBASE_PROJECT_ID?.replace(/\\n/g, '\n')||''),
+      projectId: process.env.FIREBASE_PROJECT_ID?.replace(/\\n/g, '\n'),
     }),
     databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`,
   });

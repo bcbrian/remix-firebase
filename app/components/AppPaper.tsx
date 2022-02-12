@@ -1,7 +1,18 @@
 import Stack from "@mui/material/Stack";
 import Paper from "@mui/material/Paper";
 
-export function AppPaper(props) {
+interface Props {
+  children: React.ReactNode;
+  leftColor?: string;
+  rightColor?: string;
+  sx?: object;
+}
+export function AppPaper({
+  children,
+  leftColor = "primary",
+  rightColor = "secondary",
+  sx = {},
+}) {
   return (
     <Stack
       component={Paper}
@@ -25,10 +36,12 @@ export function AppPaper(props) {
           zIndex: -1,
           margin: "-5px",
           borderRadius: "inherit",
-          background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+          background: `linear-gradient(to right, ${theme.palette[leftColor].main}, ${theme.palette[rightColor].main})`,
         },
+        ...sx,
       })}
-      {...props}
-    />
+    >
+      {children}
+    </Stack>
   );
 }

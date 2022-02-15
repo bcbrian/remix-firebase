@@ -20,6 +20,7 @@ export async function emailAndPasswordSignUp({
   const user = userCredential.user;
   return user;
 }
+
 export async function emailAndPasswordSignIn({
   email,
   password,

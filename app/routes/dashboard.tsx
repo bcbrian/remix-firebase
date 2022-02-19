@@ -4,10 +4,18 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Paper from "@mui/material/Paper";
 import { requireUserId } from "~/utils/session.server";
-import { addDataPoint, DataPoint, getAllDataPoints } from "~/db/dataPoints";
+import {
+  addDataPoint,
+  DataPoint,
+  getAllDataPoints,
+} from "~/db/dataPoints.server";
+import { DataPointWithId, getAllDataPointsLive } from "~/db/dataPoints.client";
 import { Typography } from "@mui/material";
+import { useContext } from "react";
+import { AuthContext } from "~/state/AuthProvider";
+import { useFirebaseLoaderData } from "~/hooks/useFirebaseLoaderData";
 
-type LoaderData = { dataPoints: DataPoint[] };
+type LoaderData = { dataPoints: DataPointWithId[] };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
   const userId = await requireUserId(request);
@@ -37,7 +45,11 @@ export const action: ActionFunction = async ({ request, params }) => {
 };
 
 export default function DashBoard() {
-  const { dataPoints } = useLoaderData<LoaderData>();
+  const user = useContext(AuthContext);
+  const userId = user?.uid;
+  const { dataPoints } = useFirebaseLoaderData<LoaderData>((updater) =>
+    getAllDataPointsLive(userId, (dataPoints) => updater({ dataPoints }))
+  );
 
   return (
     <Stack alignItems={"center"}>

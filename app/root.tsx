@@ -10,7 +10,7 @@ import { AuthProvider } from "~/firebase/AuthProvider";
 import { Stack, ThemeProvider } from "@mui/material";
 import { AppBar } from "~/components/AppBar";
 import { theme } from "./theme";
-import { AuthUser, getAuthUser } from "./utils/session.server";
+import { AuthUser, getAuthUser, getUserToken } from "~/utils/session.server";
 import { AppPaper } from "./components/AppPaper";
 import { Typography } from "@mui/material";
 import { CacheProvider, withEmotionCache } from "@emotion/react";
@@ -101,13 +101,15 @@ const Document = withEmotionCache(
   }
 );
 
-type LoaderData = { user: AuthUser | null };
+type LoaderData = { user: AuthUser | null; userToken: string | null };
 
 export const loader: LoaderFunction = async ({ request }) => {
   const user = await getAuthUser(request);
+  const userToken = await getUserToken(request);
 
   const data: LoaderData = {
     user,
+    userToken,
   };
   return data;
 };
@@ -116,12 +118,14 @@ const cache = createEmotionCache();
 function Providers({
   user,
   children,
+  userToken,
 }: {
   user: AuthUser | null;
   children: React.ReactNode;
+  userToken: string | null;
 }) {
   return (
-    <AuthProvider user={user}>
+    <AuthProvider user={user} userToken={userToken}>
       <CacheProvider value={cache}>
         <ThemeProvider theme={theme}>{children}</ThemeProvider>
       </CacheProvider>
@@ -130,11 +134,11 @@ function Providers({
 }
 
 export default function App() {
-  const { user } = useLoaderData<LoaderData>();
+  const { user, userToken } = useLoaderData<LoaderData>();
 
   return (
     <Document>
-      <Providers user={user}>
+      <Providers user={user} userToken={userToken}>
         <AppBar />
         <Outlet />
       </Providers>

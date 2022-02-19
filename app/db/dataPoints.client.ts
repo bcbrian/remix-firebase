@@ -1,9 +1,15 @@
-import type {
+import {
+  addDoc,
   CollectionReference,
   DocumentReference,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  query,
   Query,
-} from "firebase-admin/firestore";
-import {getFirestore} from "~/firebase/firebaseAdmin.server";
+  where,
+} from "firebase/firestore";
+import { collection, getFirestore, doc } from "firebase/firestore";
 
 const DATA_POINTS_COLLECTION = "dataPoints";
 
@@ -13,26 +19,46 @@ export interface DataPoint {
   timestamp: number;
 }
 
-const getCollectionRef = () => getFirestore().collection(
-  DATA_POINTS_COLLECTION
-) as CollectionReference<DataPoint>;
+export interface DataPointWithId extends DataPoint {
+  id: string;
+}
+
+const getCollectionRef = () =>
+  collection(
+    getFirestore(),
+    DATA_POINTS_COLLECTION
+  ) as CollectionReference<DataPoint>;
 
 const getDocReference = (dataPointId) =>
-  getCollectionRef().doc(dataPointId) as DocumentReference<DataPoint>;
+  doc(
+    getFirestore(),
+    DATA_POINTS_COLLECTION,
+    dataPointId
+  ) as DocumentReference<DataPoint>;
 
 const getQuery = (userId) =>
-  getCollectionRef().where("userId", "==", userId) as Query<DataPoint>;
+  query(getCollectionRef(), where("userId", "==", userId)) as Query<DataPoint>;
 
 export async function getAllDataPoints(userId): Promise<DataPoint[]> {
   const queryRef = getQuery(userId);
-  const querySnapshot = await queryRef.get();
+  const querySnapshot = await getDocs(queryRef);
   return querySnapshot.docs.map((doc) => doc.data());
+}
+
+export function getAllDataPointsLive(userId, callback) {
+  return onSnapshot(getQuery(userId), (querySnapshot) => {
+    const docs: DataPointWithId[] = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    callback(docs);
+  });
 }
 
 export async function getDataPoint(dataPointId): Promise<DataPoint | null> {
   const docRef = getDocReference(dataPointId);
-  const docSnap = await docRef.get();
-  if (docSnap.exists) {
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
     return docSnap?.data() || null;
   } else {
     // doc.data() will be undefined in this case
@@ -43,7 +69,7 @@ export async function getDataPoint(dataPointId): Promise<DataPoint | null> {
 
 export async function addDataPoint(dataPoint: DataPoint): Promise<DataPoint> {
   try {
-    const docRef = await getCollectionRef().add(dataPoint);
+    const docRef = await addDoc(getCollectionRef(), dataPoint);
 
     const newDataPoint = await getDataPoint(docRef.id);
     if (!newDataPoint) {

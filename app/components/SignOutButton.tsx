@@ -3,10 +3,9 @@ import { signOut } from "../firebase/auth";
 
 import Button from "@mui/material/Button";
 
-const SignOut = (props) => (
+export const SignOutButton = (props) => (
   <>
     <Button onClick={() => signOut()} {...props}>sign out</Button>
   </>
 );
 
-export default SignOut;

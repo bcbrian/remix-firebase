@@ -1,4 +1,4 @@
-import { getAuth } from "./firebase.server";
+import { getAuth } from "./firebase";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,

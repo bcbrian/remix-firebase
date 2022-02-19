@@ -8,19 +8,19 @@ import {
 import { getAuth } from "~/firebase/firebaseAdmin.server";
 
 type LoginForm = {
-  username: string;
+  email: string;
   password: string;
 };
 
-export interface AuthUser extends DecodedIdToken {}
+export type AuthUser = DecodedIdToken | User;
 
-export async function register({ username, password }: LoginForm) {
-  const user = await emailAndPasswordSignUp({ email: username, password });
+export async function register({ email, password }: LoginForm) {
+  const user = await emailAndPasswordSignUp({ email: email, password });
   return user;
 }
 
-export async function login({ username, password }: LoginForm): Promise<User> {
-  const user = await emailAndPasswordSignIn({ email: username, password });
+export async function login({ email, password }: LoginForm): Promise<User> {
+  const user = await emailAndPasswordSignIn({ email: email, password });
   return user;
 }
 
@@ -83,6 +83,7 @@ export async function requireUserId(
   let userId = await getUserId(request);
   if (!userId || typeof userId !== "string") {
     let searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
+    console.log("requireUserId >>> redirectTo", redirectTo);
     throw redirect(`/sign/in?${searchParams}`);
   }
   return userId;
@@ -90,6 +91,8 @@ export async function requireUserId(
 
 export async function logout(request: Request) {
   let session = await storage.getSession(request.headers.get("Cookie"));
+  console.log("logout >>> WHAT");
+
   return redirect("/sign/in", {
     headers: {
       "Set-Cookie": await storage.destroySession(session),

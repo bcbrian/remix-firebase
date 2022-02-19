@@ -4,18 +4,14 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import {
-  ActionFunction,
-  Form,
-  LoaderFunction,
-  MetaFunction,
-  useLoaderData,
-} from "remix";
-import { useActionData, json, useSearchParams, Link } from "remix";
-import { createUserSession, login, register } from "~/utils/session.server";
+import { Form, LoaderFunction, MetaFunction, useLoaderData } from "remix";
 import { useEffect, useState } from "react";
 import { Typography } from "@mui/material";
 import { AppPaper } from "~/components/AppPaper";
+import {
+  emailAndPasswordSignIn,
+  emailAndPasswordSignUp,
+} from "~/firebase/auth";
 
 export const meta: MetaFunction = () => {
   return {
@@ -32,6 +28,7 @@ export const AUTH_TYPES = {
 type LoaderData = { authType: string };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
+  // TODO: if a user then redirect to /dashboard
   const data: LoaderData = {
     authType:
       params.authType === "in" ? AUTH_TYPES.SIGN_IN : AUTH_TYPES.SIGN_UP,
@@ -40,9 +37,9 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   return data;
 };
 
-function validateUsername(username: unknown) {
-  if (typeof username !== "string" || username.length < 3) {
-    return `Usernames must be at least 3 characters long`;
+function validateEmail(email: unknown) {
+  if (typeof email !== "string" || email.match(/.+@.+\..+/) === null) {
+    return `Emails must look like example@example.com`;
   }
 }
 
@@ -52,91 +49,22 @@ function validatePassword(password: unknown) {
   }
 }
 
-type ActionData = {
+type FormData = {
   formError?: string;
   fieldErrors?: {
-    username: string | undefined;
+    email: string | undefined;
     password: string | undefined;
   };
   fields?: {
     authType: string;
-    username: string;
+    email: string;
     password: string;
   };
 };
 
-const badRequest = (data: ActionData) => json(data, { status: 400 });
-
-export const action: ActionFunction = async ({ request }) => {
-  const form = await request.formData();
-  const authType = form.get("authType");
-  const username = form.get("username");
-  const password = form.get("password");
-  const redirectTo = form.get("redirectTo") || "/dashboard";
-  if (
-    typeof authType !== "string" ||
-    typeof username !== "string" ||
-    typeof password !== "string" ||
-    typeof redirectTo !== "string"
-  ) {
-    return badRequest({
-      formError: `Form not submitted correctly.`,
-    });
-  }
-
-  const fields = { authType, username, password };
-  const fieldErrors = {
-    username: validateUsername(username),
-    password: validatePassword(password),
-  };
-  if (Object.values(fieldErrors).some(Boolean))
-    return badRequest({ fieldErrors, fields });
-
-  switch (authType) {
-    case AUTH_TYPES.SIGN_IN: {
-      const user = await login({ username, password });
-      if (!user || !user.email) {
-        return badRequest({
-          fields,
-          formError: `Username/Password combination is incorrect`,
-        });
-      }
-      const userToken = await user.getIdToken();
-      return createUserSession(userToken, redirectTo);
-    }
-    case AUTH_TYPES.SIGN_UP: {
-      // if (userExists) {
-      //   return badRequest({
-      //     fields,
-      //     formError: `User with username ${username} already exists`,
-      //   });
-      // }
-      const user = await register({ username, password });
-      if (!user || !user.email) {
-        return badRequest({
-          fields,
-          formError: `Something went wrong trying to create a new user.`,
-        });
-      }
-      const userToken = await user.getIdToken();
-      return createUserSession(userToken, redirectTo);
-    }
-    default: {
-      return badRequest({
-        fields,
-        formError: `Login type invalid`,
-      });
-    }
-  }
-};
-
 export default function Login() {
   const { authType: initAuthType } = useLoaderData<LoaderData>();
-  console.log(initAuthType);
-
-  const actionData = useActionData<ActionData>();
-  const [searchParams] = useSearchParams();
-
+  const [actionData, setActionData] = useState<FormData>({});
   const [authType, setAuthType] = useState(initAuthType);
 
   const handleAuthType = (event, newAuthType) => {
@@ -149,6 +77,78 @@ export default function Login() {
       setAuthType(initAuthType);
     }
   }, [initAuthType]);
+
+  async function handleSubmit(
+    event: React.FormEvent<HTMLFormElement>
+  ): Promise<void> {
+    event.preventDefault();
+    const target = event.target as HTMLFormElement;
+    const form = new FormData(target);
+    const authType = form.get("authType");
+    const email = form.get("email");
+    const password = form.get("password");
+
+    if (
+      typeof authType !== "string" ||
+      typeof email !== "string" ||
+      typeof password !== "string"
+    ) {
+      return setActionData({
+        formError: `Form not submitted correctly.`,
+      });
+    }
+
+    const fields = { authType, email, password };
+    const fieldErrors = {
+      email: validateEmail(email),
+      password: validatePassword(password),
+    };
+    if (Object.values(fieldErrors).some(Boolean))
+      return setActionData({ fieldErrors, fields });
+
+    switch (authType) {
+      case AUTH_TYPES.SIGN_IN: {
+        try {
+          const user = await emailAndPasswordSignIn({ email, password });
+          if (!user || !user.email) {
+            return setActionData({
+              fields,
+              formError: `Email/Password combination is incorrect`,
+            });
+          }
+          return;
+        } catch (error) {
+          return setActionData({
+            fields,
+            formError: `Email/Password combination is incorrect`,
+          });
+        }
+      }
+      case AUTH_TYPES.SIGN_UP: {
+        // if (userExists) {
+        //   return setActionData({
+        //     fields,
+        //     formError: `User with email ${email} already exists`,
+        //   });
+        // }
+        const user = await emailAndPasswordSignUp({ email, password });
+
+        if (!user || !user.email) {
+          return setActionData({
+            fields,
+            formError: `Something went wrong trying to create a new user.`,
+          });
+        }
+        return;
+      }
+      default: {
+        return setActionData({
+          fields,
+          formError: `Login type invalid`,
+        });
+      }
+    }
+  }
   return (
     <>
       <Stack
@@ -163,16 +163,12 @@ export default function Login() {
           </Typography>
           <Form
             method="post"
+            onSubmit={handleSubmit}
             aria-describedby={
               actionData?.formError ? "form-error-message" : undefined
             }
           >
             <Stack component={Paper} spacing={2}>
-              <input
-                type="hidden"
-                name="redirectTo"
-                value={searchParams.get("redirectTo") ?? undefined}
-              />
               <input type="hidden" name="authType" value={authType} />
               <ToggleButtonGroup
                 value={authType}
@@ -199,30 +195,29 @@ export default function Login() {
 
               <div>
                 <TextField
-                  label="Username"
+                  label="Email"
                   variant="filled"
                   fullWidth
                   color={
                     authType === AUTH_TYPES.SIGN_IN ? "primary" : "secondary"
                   }
-                  id="username-input"
-                  name="username"
-                  defaultValue={actionData?.fields?.username}
-                  aria-invalid={Boolean(actionData?.fieldErrors?.username)}
+                  id="email-input"
+                  name="email"
+                  defaultValue={actionData?.fields?.email}
+                  aria-invalid={Boolean(actionData?.fieldErrors?.email)}
                   aria-describedby={
-                    actionData?.fieldErrors?.username
-                      ? "username-error"
-                      : undefined
+                    actionData?.fieldErrors?.email ? "email-error" : undefined
                   }
                 />
-                {actionData?.fieldErrors?.username ? (
-                  <p
-                    className="form-validation-error"
+                {actionData?.fieldErrors?.email ? (
+                  <Typography
+                    color="error"
+                    variant="caption"
                     role="alert"
-                    id="username-error"
+                    id="email-error"
                   >
-                    {actionData?.fieldErrors.username}
-                  </p>
+                    {actionData?.fieldErrors.email}
+                  </Typography>
                 ) : null}
               </div>
               <div>
@@ -248,20 +243,26 @@ export default function Login() {
                 />
 
                 {actionData?.fieldErrors?.password ? (
-                  <p
-                    className="form-validation-error"
+                  <Typography
+                    color="error"
+                    variant="caption"
                     role="alert"
                     id="password-error"
                   >
                     {actionData?.fieldErrors.password}
-                  </p>
+                  </Typography>
                 ) : null}
               </div>
               <div id="form-error-message">
                 {actionData?.formError ? (
-                  <p className="form-validation-error" role="alert">
+                  <Typography
+                    color="error"
+                    variant="caption"
+                    role="alert"
+                    id="form-error"
+                  >
                     {actionData?.formError}
-                  </p>
+                  </Typography>
                 ) : null}
               </div>
               <Button

@@ -1,11 +1,12 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import { Form, Link } from "remix";
+import { Link } from "remix";
 import { useAuth } from "~/firebase/AuthProvider";
+import { SignOutButton } from "~/components/SignOutButton";
+import { LogoutForm } from "~/components/LogoutForm";
 
 export default function SignInUp() {
   const user = useAuth();
-
   return user === null ? (
     <Box>
       <Button component={Link} to="/sign/in">
@@ -22,11 +23,11 @@ export default function SignInUp() {
     </Box>
   ) : (
     <Box>
-      <Form action="/logout" method="post">
-        <Button type="submit" color="secondary">
+      <LogoutForm>
+        <SignOutButton type="submit" color="secondary">
           sign out
-        </Button>
-      </Form>
+        </SignOutButton>
+      </LogoutForm>
     </Box>
   );
 }

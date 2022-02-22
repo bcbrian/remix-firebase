@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { Link } from "remix";
-import { useAuth } from "~/firebase/AuthProvider";
+import { useAuth } from "~/state/AuthProvider";
 import { SignOutButton } from "~/components/SignOutButton";
 import { LogoutForm } from "~/components/LogoutForm";
 

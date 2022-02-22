@@ -6,7 +6,7 @@ import {
 } from "remix";
 import { Links, LiveReload, Outlet, useCatch, Meta, Scripts } from "remix";
 import globalStylesUrl from "~/styles/global.css";
-import { AuthProvider } from "~/firebase/AuthProvider";
+import { AuthProvider } from "~/state/AuthProvider";
 import { Stack, ThemeProvider } from "@mui/material";
 import { AppBar } from "~/components/AppBar";
 import { theme } from "./theme";
@@ -18,7 +18,6 @@ import { createEmotionCache } from "~/utils/createEmotionCache";
 import { unstable_useEnhancedEffect as useEnhancedEffect } from "@mui/material";
 import { useContext } from "react";
 import ClientStyleContext from "~/theme/ClientStyleContext";
-import { height } from "@mui/system";
 
 export function links() {
   return [

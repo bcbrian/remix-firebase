@@ -12,6 +12,7 @@ import {
   emailAndPasswordSignIn,
   emailAndPasswordSignUp,
 } from "~/firebase/auth";
+import { addAppUser } from "~/db/appUsers/appUsers.client";
 
 export const meta: MetaFunction = () => {
   return {
@@ -131,15 +132,15 @@ export default function Login() {
         //     formError: `User with email ${email} already exists`,
         //   });
         // }
-        const user = await emailAndPasswordSignUp({ email, password });
-
-        if (!user || !user.email) {
+        try {
+          const user = await emailAndPasswordSignUp({ email, password });
+          return;
+        } catch (error) {
           return setActionData({
             fields,
             formError: `Something went wrong trying to create a new user.`,
           });
         }
-        return;
       }
       default: {
         return setActionData({

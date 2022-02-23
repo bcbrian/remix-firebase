@@ -2,6 +2,7 @@ import { getAuth } from "firebase/auth";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Form, useSearchParams } from "remix";
 import { LogoutForm } from "~/components/LogoutForm";
+import { addAppUser } from "~/db/appUsers/appUsers.client";
 import type { AuthUser } from "~/utils/session.server";
 
 export const AuthContext = createContext<AuthUser | null>(null);
@@ -25,7 +26,7 @@ export function AuthProvider({
     setUser(userProp);
   }, [userProp]);
 
-  async function sendUserToken() {
+  function sendUserToken() {
     if (!userTokenForm.current) return;
     userTokenForm.current.submit();
   }
@@ -44,6 +45,7 @@ export function AuthProvider({
         if (token !== userToken) {
           setUser(userFromChange);
           setUserToken(token);
+          await addAppUser(userFromChange.uid);
           sendUserToken();
         }
       }

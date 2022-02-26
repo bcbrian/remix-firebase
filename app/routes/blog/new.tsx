@@ -11,21 +11,10 @@ import invariant from "tiny-invariant";
 import { addBlogPost } from "~/db/blogPosts.server";
 import { requireUserId } from "~/utils/session.server";
 import { getAppUser } from "~/db/appUsers/appUsers.server";
-import { TextField } from "@mui/material";
+import { FormControlLabel, TextField, Switch } from "@mui/material";
 import { Box } from "@mui/system";
-import {Editor, EditorState} from 'draft-js';
 import { useState } from "react";
-import draftStyles from 'draft-js/dist/Draft.css';
-
-export function links() {
-  return [
-    {
-      rel: "stylesheet",
-      href: draftStyles,
-    },
-  ];
-}
-
+import { DateTimePicker } from "~/components/DateTimePicker"
 
 type LoaderData = { authorId: string };
 
@@ -50,6 +39,7 @@ type PostError = {
 
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
+  
 
   const title = formData.get("title");
   const slug = formData.get("slug");
@@ -92,25 +82,28 @@ export const action: ActionFunction = async ({ request }) => {
   return redirect("/blog");
 };
 
-
-const MyInput = () => {
-  const [editorState, setEditorState] = useState(() =>
-    EditorState.createEmpty(),
-  );
-
-  return <Editor editorState={editorState} onChange={setEditorState} />;
-};
-
 export default function NewPost() {
+  const [ date, setDate] = useState<Date | null>(new Date())
+  const [isPublished, setIsPublished] = useState(true);
   const { authorId } = useLoaderData<LoaderData>();
   const errors = useActionData();
   return (
     <Form method="post">
       <input type="hidden" name="authorId" value={authorId} />
-      <input type="hidden" name="isPublished" value="true" />
-      <input type="hidden" name="publishDate" value={Date.now().toString()} />
-      <input type="hidden" name="description" value="A cool description!" />
+      <input type="hidden" name="isPublished" value={isPublished.toString()} />
+      <input type="hidden" name="publishDate" value={date?.getTime().toString()} />
       <Box>
+        <DateTimePicker date={date} setDate={setDate} variant="filled"/>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={isPublished}
+              onChange={(event) => setIsPublished(event.target.checked)}
+              inputProps={{ "aria-label": "controlled" }}
+            />
+          }
+          label={isPublished ? "Is Published" : "Not Published"}
+        />
         <TextField
           error={errors?.title}
           id="title"
@@ -118,24 +111,35 @@ export default function NewPost() {
           helperText={errors?.title ? "Title is required" : null}
           variant="filled"
         />
+        <TextField
+          error={errors?.description}
+          id="description"
+          label="Description"
+          helperText={errors?.description ? "Description is required" : null}
+          variant="filled"
+        />
       </Box>
       <Box>
-          <TextField
+        <TextField
           error={errors?.slug}
           id="slug"
           label="Slug"
           helperText={errors?.slug ? "Slug is required" : null}
           variant="filled"
         />
-        
       </Box>
-      <p>
-        {/* <label htmlFor="markdown">Markdown:</label>{" "}
-        {errors?.markdown ? <em>Markdown is required</em> : null}
-        <br />
-        <textarea id="markdown" rows={2} name="markdown" /> */}
-        <MyInput />
-      </p>
+      <Box>
+        <TextField
+          error={errors?.markdown}
+          id="markdown"
+          label="Markdown"
+          helperText={errors?.markdown ? <em>Markdown is required</em> : null}
+          variant="filled"
+          multiline
+          rows={10}
+          name="markdown"
+        />
+      </Box>
       <p>
         <button type="submit">Create Post</button>
       </p>

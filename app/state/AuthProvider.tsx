@@ -1,6 +1,6 @@
 import { getAuth } from "firebase/auth";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { Form, useSearchParams } from "remix";
+import { Form, useFetcher, useLocation, useSearchParams } from "remix";
 import { LogoutForm } from "~/components/LogoutForm";
 import { addAppUser } from "~/db/appUsers/appUsers.client";
 import type { AuthUser } from "~/utils/session.server";
@@ -21,14 +21,19 @@ export function AuthProvider({
   const logoutFormRef = useRef<HTMLFormElement>(null);
   const [userToken, setUserToken] = useState<string>(userTokenProp || "");
   const userTokenForm = useRef<HTMLFormElement | null>(null);
+  const fetcher = useFetcher();
 
   useEffect(() => {
     setUser(userProp);
   }, [userProp]);
 
+  const { pathname } = useLocation();
+  const redirectTo = pathname.includes("/sign/") ? "/dashboard" : pathname;
+
   function sendUserToken() {
     if (!userTokenForm.current) return;
-    userTokenForm.current.submit();
+    const formData = new FormData(userTokenForm.current);
+    fetcher.submit(formData, {method: "post", action:"/update-session"})
   }
 
   // listen for token changes
@@ -64,6 +69,8 @@ export function AuthProvider({
     return () => clearInterval(handle);
   }, []);
 
+  
+
   return (
     <AuthContext.Provider value={user}>
       <LogoutForm ref={logoutFormRef} />
@@ -73,7 +80,7 @@ export function AuthProvider({
         <input
           type="hidden"
           name="redirectTo"
-          value={searchParams.get("redirectTo") ?? undefined}
+          value={searchParams.get("redirectTo") ?? redirectTo}
         />
       </Form>
       {children}

@@ -28,8 +28,7 @@ const getCollectionRef = () =>
 const getDocReference = (blogPostId) =>
   getCollectionRef().doc(blogPostId) as DocumentReference<BlogPost>;
 
-const getQuery = () =>
-  getCollectionRef() as Query<BlogPost>;
+const getQuery = () => getCollectionRef() as Query<BlogPost>;
 
 export async function getAllBlogPosts(): Promise<BlogPostWithId[]> {
   const queryRef = getQuery();
@@ -37,11 +36,11 @@ export async function getAllBlogPosts(): Promise<BlogPostWithId[]> {
   return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 }
 
-export async function getBlogPost(blogPostId): Promise<BlogPost | null> {
+export async function getBlogPost(blogPostId): Promise<BlogPostWithId | null> {
   const docRef = getDocReference(blogPostId);
   const docSnap = await docRef.get();
   if (docSnap.exists) {
-    return docSnap?.data() || null;
+    return { id: docRef.id, ...docSnap?.data() as BlogPost } || null;
   } else {
     // doc.data() will be undefined in this case
     console.log("No such document!");

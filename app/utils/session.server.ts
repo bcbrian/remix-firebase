@@ -83,7 +83,6 @@ export async function requireUserId(
   let userId = await getUserId(request);
   if (!userId || typeof userId !== "string") {
     let searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
-    console.log("requireUserId >>> redirectTo", redirectTo);
     throw redirect(`/sign/in?${searchParams}`);
   }
   return userId;
@@ -91,7 +90,7 @@ export async function requireUserId(
 
 export async function logout(request: Request) {
   let session = await storage.getSession(request.headers.get("Cookie"));
-  console.log("logout >>> WHAT");
+  ("logout >>> WHAT");
 
   return redirect("/sign/in", {
     headers: {

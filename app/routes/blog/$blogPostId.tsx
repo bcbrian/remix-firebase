@@ -5,8 +5,9 @@ import { compile, run } from "@mdx-js/mdx";
 import { BlogPostWithId, getBlogPost } from "~/db/blogPosts.server";
 import React, { Fragment, useEffect, useState } from "react";
 import * as runtime from "react/jsx-runtime.js";
-import { Typography } from "@mui/material";
+import { Link, Paper, Typography } from "@mui/material";
 import { Box } from "@mui/system";
+import { CodeBlock } from "~/components/CodeBlock";
 
 interface LoaderData extends BlogPostWithId {
   code: string;
@@ -51,10 +52,26 @@ export default function PostSlug() {
             h4: (props) => <Typography variant="h4" {...props} />,
             h5: (props) => <Typography variant="h5" {...props} />,
             h6: (props) => <Typography variant="h6" {...props} />,
+            blockquote: (props) => (
+              <Typography
+                variant="h6"
+                component={Paper}
+                sx={{
+                  padding: 2,
+                  margin: 2,
+                  borderLeft: ({ palette }) =>
+                    `2px solid${palette.primary.main}`,
+                }}
+                {...props}
+              />
+            ),
+            pre: (props) => <div {...props} />,
+            code: (props) => <CodeBlock {...props}/>,
+            a: (props) => <Link {...props} />,
 
             // em: (props) => <i style={{ color: "goldenrod" }} {...props} />,
             // wrapper: ({ components, ...rest }) => <main {...rest} />,
-            // Planet: () => "Neptune",
+            Planet: () => "Neptune",
             // theme: {
             //   text: (props) => <span style={{ color: "grey" }} {...props} />,
             // },

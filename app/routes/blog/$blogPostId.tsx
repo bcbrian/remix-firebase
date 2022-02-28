@@ -22,7 +22,6 @@ export const loader: LoaderFunction = async ({
   params,
 }): Promise<LoaderData> => {
   const userId = await getUserId(request);
-  console.log("userId", userId);
   let isAuthor = false;
   if (userId) {
     const appUser = await getAppUser(userId);

@@ -72,19 +72,12 @@ export const action: ActionFunction = async ({ request }) => {
   }
 
   invariant(typeof title === "string");
-  console.log("title", title);
   invariant(typeof slug === "string");
-  console.log("slug", slug);
   invariant(typeof markdown === "string");
-  console.log("markdown", markdown);
   invariant(typeof description === "string");
-  console.log("description", description);
   invariant(typeof authorId === "string");
-  console.log("authorId", authorId);
   invariant(typeof isPublished === "boolean");
-  console.log("isPublished", isPublished);
   invariant(typeof publishDate === "number");
-  console.log("publishDate", publishDate);
 
   await addBlogPost({
     authorId,

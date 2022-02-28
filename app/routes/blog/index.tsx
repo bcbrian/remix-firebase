@@ -15,7 +15,6 @@ export const loader: LoaderFunction = async ({
   params,
 }): Promise<LoaderData | Response> => {
   const userId = await getUserId(request);
-  console.log("userId", userId);
   let isAuthor = false;
   if (userId) {
     const appUser = await getAppUser(userId);
@@ -29,7 +28,6 @@ export const loader: LoaderFunction = async ({
 
 export default function Blog() {
   const { posts, isAuthor } = useLoaderData<LoaderData>();
-  console.log("isAuthor", isAuthor);
   return (
     <>
       <Stack

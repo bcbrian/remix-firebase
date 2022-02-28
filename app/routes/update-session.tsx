@@ -13,8 +13,6 @@ export const action: ActionFunction = async ({ request, params }) => {
           status: 404,
         });
       }
-      console.log("requester", request.url);
-      console.log("redirectTo", redirectTo)
       return await createUserSession(userToken, redirectTo);
     default:
       console.log("REQUEST NOT HANDLED");

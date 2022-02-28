@@ -42,7 +42,6 @@ let storage = createCookieSessionStorage({
 });
 
 export function getUserSession(request: Request) {
-  console.log('request.headers.get("Cookie")', !!request.headers);
   return storage.getSession(request.headers.get("Cookie"));
 }
 

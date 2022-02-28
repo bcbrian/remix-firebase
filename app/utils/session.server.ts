@@ -42,6 +42,7 @@ let storage = createCookieSessionStorage({
 });
 
 export function getUserSession(request: Request) {
+  console.log('request.headers.get("Cookie")', !!request.headers);
   return storage.getSession(request.headers.get("Cookie"));
 }
 
@@ -71,7 +72,8 @@ export async function getUserId(request: Request): Promise<string | null> {
   try {
     let authUser = await getAuthUser(request);
     return authUser?.uid || null;
-  } catch {
+  } catch (error) {
+    console.log("getUserId error", error);
     return null;
   }
 }
@@ -89,8 +91,7 @@ export async function requireUserId(
 }
 
 export async function logout(request: Request) {
-  let session = await storage.getSession(request.headers.get("Cookie"));
-  ("logout >>> WHAT");
+  let session = await getUserSession(request);
 
   return redirect("/sign/in", {
     headers: {

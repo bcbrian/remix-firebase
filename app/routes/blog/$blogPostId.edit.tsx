@@ -4,11 +4,16 @@ import {
   LoaderFunction,
   useLoaderData,
   useActionData,
+  Link,
 } from "remix";
 import type { ActionFunction } from "remix";
 import invariant from "tiny-invariant";
 
-import { addBlogPost } from "~/db/blogPosts.server";
+import {
+  addBlogPost,
+  BlogPostWithId,
+  getBlogPost,
+} from "~/db/blogPosts.server";
 import { requireUserId } from "~/utils/session.server";
 import { getAppUser } from "~/db/appUsers/appUsers.server";
 import {
@@ -22,22 +27,26 @@ import { Box } from "@mui/system";
 import { useState } from "react";
 import { DateTimePicker } from "~/components/DateTimePicker";
 
-type LoaderData = { authorId: string };
+interface LoaderData extends BlogPostWithId {
+  isAuthor: boolean;
+}
 
 export const loader: LoaderFunction = async ({
   request,
   params,
 }): Promise<LoaderData | Response> => {
   const userId = await requireUserId(request);
-  const appUser = await getAppUser(userId);
-  if (!appUser?.permissions.includes("author")) {
-    return redirect("/blog");
+  let isAuthor = false;
+  if (userId) {
+    const appUser = await getAppUser(userId);
+    if (!appUser?.permissions.includes("author")) {
+      return redirect("/blog");
+    }
   }
-  const data: LoaderData = {
-    authorId: userId,
-  };
-
-  return data;
+  invariant(params.blogPostId, "expected params.slug");
+  const blogPost = await getBlogPost(params.blogPostId);
+  invariant(blogPost, "expected blogPost");
+  return { ...blogPost, isAuthor };
 };
 
 type PostError = {
@@ -72,19 +81,12 @@ export const action: ActionFunction = async ({ request }) => {
   }
 
   invariant(typeof title === "string");
-  console.log("title", title);
   invariant(typeof slug === "string");
-  console.log("slug", slug);
   invariant(typeof markdown === "string");
-  console.log("markdown", markdown);
   invariant(typeof description === "string");
-  console.log("description", description);
   invariant(typeof authorId === "string");
-  console.log("authorId", authorId);
   invariant(typeof isPublished === "boolean");
-  console.log("isPublished", isPublished);
   invariant(typeof publishDate === "number");
-  console.log("publishDate", publishDate);
 
   await addBlogPost({
     authorId,
@@ -100,9 +102,17 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export default function NewPost() {
-  const [date, setDate] = useState<Date | null>(new Date());
-  const [isPublished, setIsPublished] = useState(true);
-  const { authorId } = useLoaderData<LoaderData>();
+  const {
+    authorId,
+    isPublished: initIsPublished,
+    title,
+    slug,
+    markdown,
+    publishDate,
+    description,
+  } = useLoaderData<LoaderData>();
+  const [date, setDate] = useState<Date | null>(new Date(publishDate));
+  const [isPublished, setIsPublished] = useState(initIsPublished);
   const errors = useActionData();
   return (
     <Form method="post">
@@ -142,6 +152,7 @@ export default function NewPost() {
             variant="filled"
             name="title"
             fullWidth
+            defaultValue={title}
           />
         </Box>
         <Box>
@@ -153,6 +164,7 @@ export default function NewPost() {
             variant="filled"
             name="description"
             fullWidth
+            defaultValue={description}
           />
         </Box>
         <Box>
@@ -164,6 +176,7 @@ export default function NewPost() {
             variant="filled"
             name="slug"
             fullWidth
+            defaultValue={slug}
           />
         </Box>
         <Box>
@@ -177,14 +190,20 @@ export default function NewPost() {
             rows={10}
             name="markdown"
             fullWidth
+            defaultValue={markdown}
           />
         </Box>
         <Stack direction={"row"} spacing={2} justifyContent="flex-end">
-          <Button type="submit" color="secondary">
+          <Button
+            component={Link}
+            to={`/blog/${slug}`}
+            target="_blank"
+            color="secondary"
+          >
             Preview
           </Button>
           <Button type="submit" variant="contained">
-            Create Post
+            Save Post
           </Button>
         </Stack>
       </Stack>

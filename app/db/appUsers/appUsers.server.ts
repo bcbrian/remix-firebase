@@ -24,6 +24,7 @@ export async function getAllAppUsers(userId): Promise<AppUserWithId[]> {
 }
 
 export async function getAppUser(appUserId): Promise<AppUser | null> {
+  console.log(">>> getAppUser", appUserId);
   const docRef = getDocReference(appUserId);
   const docSnap = await docRef.get();
   if (docSnap.exists) {

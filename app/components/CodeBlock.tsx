@@ -17,32 +17,33 @@ const LineNo = styled("span")({
 
 const LineContent = styled("span")({
   display: "table-cell",
+  fontFamily: "'Fira Code', monospace",
 });
 
 export const CodeBlock = ({ children }) => {
   return (
     <Highlight {...defaultProps} code={children} language="jsx" theme={dracula}>
       {({ className, style, tokens, getLineProps, getTokenProps }) => (
-          <Paper
-            className={className}
-            sx={{
-              ...style,
-              padding: 2,
-              margin: 2,
-              bgcolor: "background.paper",
-            }}
-          >
-            {tokens.map((line, i) => (
-              <Line key={i} {...getLineProps({ line, key: i })}>
-                <LineNo>{i + 1}</LineNo>
-                <LineContent>
-                  {line.map((token, key) => (
-                    <span key={key} {...getTokenProps({ token, key })} />
-                  ))}
-                </LineContent>
-              </Line>
-            ))}
-          </Paper>
+        <Paper
+          className={className}
+          sx={{
+            ...style,
+            padding: 2,
+            margin: 2,
+            bgcolor: "background.paper",
+          }}
+        >
+          {tokens.map((line, i) => (
+            <Line key={i} {...getLineProps({ line, key: i })}>
+              <LineNo>{i + 1}</LineNo>
+              <LineContent>
+                {line.map((token, key) => (
+                  <span key={key} {...getTokenProps({ token, key })} />
+                ))}
+              </LineContent>
+            </Line>
+          ))}
+        </Paper>
       )}
     </Highlight>
   );

@@ -6,6 +6,7 @@ module.exports = {
   server: "./server.js",
   ignoredRouteFiles: [".*"],
   serverDependenciesToBundle: [
+    // all of these dependencies are for mdx-js
     "@mdx-js/mdx",
     "unified",
     "bail",

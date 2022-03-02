@@ -1,14 +1,11 @@
 import { getApps, initializeApp } from "firebase/app";
-import {
-  connectAuthEmulator,
-  getAuth,
-} from "firebase/auth";
+import { connectAuthEmulator, getAuth } from "firebase/auth";
 
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 
 let app, auth, db;
 
-if(!getApps().length) {
+if (!getApps().length) {
   const firebaseConfig = {
     apiKey: "AIzaSyA34ZWGXJfZlR6u8zsfK5nbsHpigr_aM58",
     authDomain: "codesagas.firebaseapp.com",
@@ -21,10 +18,10 @@ if(!getApps().length) {
   app = initializeApp(firebaseConfig);
   auth = getAuth();
   db = getFirestore();
- if(process.env.NODE_ENV === "development") {
-   connectFirestoreEmulator(db, 'localhost', 8080);
-   connectAuthEmulator(auth, "http://localhost:9099");
- }
+  if (process.env.FIREBASE_ENVIRONMENT === "development") {
+    connectFirestoreEmulator(db, "localhost", 8080);
+    connectAuthEmulator(auth, "http://localhost:9099");
+  }
 }
 
 export { app, auth, db, getAuth, getFirestore };

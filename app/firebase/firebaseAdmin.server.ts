@@ -4,7 +4,7 @@ import { getFirestore, Firestore } from "firebase-admin/firestore";
 
 let app: App, auth: Auth, db: Firestore;
 if (!getApps().length) {
-  if (process.env.FIREBASE_ENVIRONMENT === "development") {
+  if (process.env.NODE_ENV === "development") {
     process.env.FIRESTORE_EMULATOR_HOST = "localhost:8080";
     process.env.FIREBASE_AUTH_EMULATOR_HOST = "localhost:9099";
   }

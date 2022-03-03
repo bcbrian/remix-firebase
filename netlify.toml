@@ -9,7 +9,29 @@
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["@remix-run/react", "react-dom", "react"]
+  external_node_modules = [
+    "@emotion/cache",
+    "@emotion/react",
+    "@emotion/server",
+    "@emotion/styled",
+    "@mdx-js/mdx",
+    "@mui/icons-material",
+    "@mui/lab",
+    "@mui/material",
+    "@netlify/functions",
+    "@remix-run/netlify",
+    "@remix-run/react",
+    "date-fns",
+    "draft-js",
+    "firebase",
+    "firebase-admin",
+    "firebase-functions",
+    "prism-react-renderer",
+    "react",
+    "react-dom",
+    "remix",
+    "tiny-invariant"
+  ]
 
 [[redirects]]
   from = "/*"

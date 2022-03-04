@@ -1,26 +1,16 @@
 import {
   redirect,
-  Form,
   LoaderFunction,
   useLoaderData,
   useActionData,
 } from "remix";
 import type { ActionFunction } from "remix";
 import invariant from "tiny-invariant";
-
 import { addBlogPost } from "~/db/blogPosts.server";
 import { requireUserId } from "~/utils/session.server";
 import { getAppUser } from "~/db/appUsers/appUsers.server";
-import {
-  FormControlLabel,
-  TextField,
-  Switch,
-  Stack,
-  Button,
-} from "@mui/material";
-import { Box } from "@mui/system";
 import { useState } from "react";
-import { DateTimePicker } from "~/components/DateTimePicker";
+import { EditPost } from "~/components/EditPost";
 
 type LoaderData = { authorId: string };
 
@@ -45,6 +35,9 @@ type PostError = {
   slug?: boolean;
   markdown?: boolean;
   description?: boolean;
+  imageUrl?: boolean;
+  imageAlt?: boolean;
+  tags?: boolean;
 };
 
 export const action: ActionFunction = async ({ request }) => {
@@ -55,6 +48,9 @@ export const action: ActionFunction = async ({ request }) => {
   const markdown = formData.get("markdown");
   const description = formData.get("description");
   const authorId = formData.get("authorId");
+  const imageUrl = formData.get("imageUrl");
+  const imageAlt = formData.get("imageAlt");
+  const tags = String(formData.get("tags"))?.split(",") || [];
   const isPublished = formData.get("isPublished") === "true";
   const publishDate = parseInt(
     (formData.get("publishDate") as string) || "0",
@@ -66,6 +62,9 @@ export const action: ActionFunction = async ({ request }) => {
   if (!slug) errors.slug = true;
   if (!markdown) errors.markdown = true;
   if (!description) errors.description = true;
+  if (!imageUrl) errors.imageUrl = true;
+  if (!imageAlt) errors.imageAlt = true;
+  if (!tags) errors.tags = true;
 
   if (Object.keys(errors).length) {
     return errors;
@@ -76,6 +75,9 @@ export const action: ActionFunction = async ({ request }) => {
   invariant(typeof markdown === "string");
   invariant(typeof description === "string");
   invariant(typeof authorId === "string");
+  invariant(typeof imageUrl === "string");
+  invariant(typeof imageAlt === "string");
+  invariant(typeof tags === "object");
   invariant(typeof isPublished === "boolean");
   invariant(typeof publishDate === "number");
 
@@ -87,6 +89,9 @@ export const action: ActionFunction = async ({ request }) => {
     isPublished,
     publishDate,
     description,
+    imageUrl,
+    imageAlt,
+    tags,
   });
 
   return redirect("/blog");
@@ -94,93 +99,23 @@ export const action: ActionFunction = async ({ request }) => {
 
 export default function NewPost() {
   const [date, setDate] = useState<Date | null>(new Date());
+  const [markdown, setMarkdown] = useState<string>("");
   const [isPublished, setIsPublished] = useState(true);
   const { authorId } = useLoaderData<LoaderData>();
   const errors = useActionData();
+  function handleEditorChange(value) {
+    setMarkdown(value);
+  }
   return (
-    <Form method="post">
-      <input type="hidden" name="authorId" value={authorId} />
-      <input type="hidden" name="isPublished" value={isPublished.toString()} />
-      <input
-        type="hidden"
-        name="publishDate"
-        value={date?.getTime().toString()}
-      />
-      <Stack
-        spacing={2}
-        alignItems="stretch"
-        sx={{ maxWidth: "450px", margin: "0 auto" }}
-      >
-        <Box>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={isPublished}
-                onChange={(event) => setIsPublished(event.target.checked)}
-                inputProps={{ "aria-label": "controlled" }}
-              />
-            }
-            label={isPublished ? "Is Published" : "Not Published"}
-          />
-        </Box>
-        <Box>
-          <DateTimePicker date={date} setDate={setDate} variant="filled" />
-        </Box>
-        <Box>
-          <TextField
-            error={errors?.title}
-            id="title"
-            label="Title"
-            helperText={errors?.title ? "Title is required" : null}
-            variant="filled"
-            name="title"
-            fullWidth
-          />
-        </Box>
-        <Box>
-          <TextField
-            error={errors?.description}
-            id="description"
-            label="Description"
-            helperText={errors?.description ? "Description is required" : null}
-            variant="filled"
-            name="description"
-            fullWidth
-          />
-        </Box>
-        <Box>
-          <TextField
-            error={errors?.slug}
-            id="slug"
-            label="Slug"
-            helperText={errors?.slug ? "Slug is required" : null}
-            variant="filled"
-            name="slug"
-            fullWidth
-          />
-        </Box>
-        <Box>
-          <TextField
-            error={errors?.markdown}
-            id="markdown"
-            label="Markdown"
-            helperText={errors?.markdown ? <em>Markdown is required</em> : null}
-            variant="filled"
-            multiline
-            rows={10}
-            name="markdown"
-            fullWidth
-          />
-        </Box>
-        <Stack direction={"row"} spacing={2} justifyContent="flex-end">
-          <Button type="submit" color="secondary">
-            Preview
-          </Button>
-          <Button type="submit" variant="contained">
-            Create Post
-          </Button>
-        </Stack>
-      </Stack>
-    </Form>
+    <EditPost
+      errors={errors}
+      authorId={authorId}
+      isPublished={isPublished}
+      setIsPublished={setIsPublished}
+      date={date}
+      setDate={setDate}
+      markdown={markdown}
+      handleEditorChange={handleEditorChange}
+    />
   );
 }

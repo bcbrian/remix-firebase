@@ -15,6 +15,9 @@ export interface BlogPost {
   description: string;
   isPublished: boolean;
   publishDate: number;
+  imageUrl: string;
+  imageAlt: string;
+  tags: string[];
 }
 export interface BlogPostWithId extends BlogPost {
   id: string;

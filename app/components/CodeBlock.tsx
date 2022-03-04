@@ -1,5 +1,5 @@
 import { Paper, Box } from "@mui/material";
-import { Box, styled } from "@mui/system";
+import { styled } from "@mui/system";
 import Highlight, { defaultProps } from "prism-react-renderer";
 import dracula from "prism-react-renderer/themes/dracula";
 
@@ -37,9 +37,20 @@ export const CodeBlock = ({ children }) => {
             <Line key={i} {...getLineProps({ line, key: i })}>
               <LineNo>{i + 1}</LineNo>
               <LineContent>
-                {line.map((token, key) => (
-                  <span key={key} {...getTokenProps({ token, key })} />
-                ))}
+                {line.map((token, key) => {
+                  console.log(token, getTokenProps({ token, key }));
+                  const { children, ...props } = getTokenProps({ token, key });
+                  const sanitizedChildren = children.replace(/\s/g, "&nbsp;");
+                  return (
+                    <span
+                      key={key}
+                      {...props}
+                      dangerouslySetInnerHTML={{
+                        __html: sanitizedChildren,
+                      }}
+                    />
+                  );
+                })}
               </LineContent>
             </Line>
           ))}

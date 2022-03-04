@@ -1,14 +1,6 @@
-import {
-  redirect,
-  Form,
-  LoaderFunction,
-  useLoaderData,
-  useActionData,
-  Link,
-} from "remix";
+import { redirect, LoaderFunction, useLoaderData, useActionData } from "remix";
 import type { ActionFunction } from "remix";
 import invariant from "tiny-invariant";
-
 import {
   addBlogPost,
   BlogPostWithId,
@@ -16,16 +8,8 @@ import {
 } from "~/db/blogPosts.server";
 import { requireUserId } from "~/utils/session.server";
 import { getAppUser } from "~/db/appUsers/appUsers.server";
-import {
-  FormControlLabel,
-  TextField,
-  Switch,
-  Stack,
-  Button,
-} from "@mui/material";
-import { Box } from "@mui/system";
 import { useState } from "react";
-import { DateTimePicker } from "~/components/DateTimePicker";
+import { EditPost } from "~/components/EditPost";
 
 interface LoaderData extends BlogPostWithId {
   isAuthor: boolean;
@@ -64,6 +48,9 @@ export const action: ActionFunction = async ({ request }) => {
   const markdown = formData.get("markdown");
   const description = formData.get("description");
   const authorId = formData.get("authorId");
+  const imageUrl = formData.get("imageUrl");
+  const imageAlt = formData.get("imageAlt");
+  const tags = String(formData.get("tags"))?.split(",") || [];
   const isPublished = formData.get("isPublished") === "true";
   const publishDate = parseInt(
     (formData.get("publishDate") as string) || "0",
@@ -75,6 +62,9 @@ export const action: ActionFunction = async ({ request }) => {
   if (!slug) errors.slug = true;
   if (!markdown) errors.markdown = true;
   if (!description) errors.description = true;
+  if (!imageUrl) errors.description = true;
+  if (!imageAlt) errors.description = true;
+  if (!tags) errors.description = true;
 
   if (Object.keys(errors).length) {
     return errors;
@@ -87,6 +77,9 @@ export const action: ActionFunction = async ({ request }) => {
   invariant(typeof authorId === "string");
   invariant(typeof isPublished === "boolean");
   invariant(typeof publishDate === "number");
+  invariant(typeof imageUrl === "string");
+  invariant(typeof imageAlt === "string");
+  invariant(typeof tags === "object");
 
   await addBlogPost({
     authorId,
@@ -96,6 +89,9 @@ export const action: ActionFunction = async ({ request }) => {
     isPublished,
     publishDate,
     description,
+    imageUrl,
+    imageAlt,
+    tags,
   });
 
   return redirect("/blog");
@@ -107,106 +103,37 @@ export default function NewPost() {
     isPublished: initIsPublished,
     title,
     slug,
-    markdown,
+    markdown: initMarkdown,
     publishDate,
     description,
+    imageUrl,
+    imageAlt,
+    tags,
   } = useLoaderData<LoaderData>();
   const [date, setDate] = useState<Date | null>(new Date(publishDate));
+  const [markdown, setMarkdown] = useState<string>(initMarkdown);
   const [isPublished, setIsPublished] = useState(initIsPublished);
   const errors = useActionData();
+  function handleEditorChange(value) {
+    setMarkdown(value);
+  }
+
   return (
-    <Form method="post">
-      <input type="hidden" name="authorId" value={authorId} />
-      <input type="hidden" name="isPublished" value={isPublished.toString()} />
-      <input
-        type="hidden"
-        name="publishDate"
-        value={date?.getTime().toString()}
-      />
-      <Stack
-        spacing={2}
-        alignItems="stretch"
-        sx={{ maxWidth: "450px", margin: "0 auto" }}
-      >
-        <Box>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={isPublished}
-                onChange={(event) => setIsPublished(event.target.checked)}
-                inputProps={{ "aria-label": "controlled" }}
-              />
-            }
-            label={isPublished ? "Is Published" : "Not Published"}
-          />
-        </Box>
-        <Box>
-          <DateTimePicker date={date} setDate={setDate} variant="filled" />
-        </Box>
-        <Box>
-          <TextField
-            error={errors?.title}
-            id="title"
-            label="Title"
-            helperText={errors?.title ? "Title is required" : null}
-            variant="filled"
-            name="title"
-            fullWidth
-            defaultValue={title}
-          />
-        </Box>
-        <Box>
-          <TextField
-            error={errors?.description}
-            id="description"
-            label="Description"
-            helperText={errors?.description ? "Description is required" : null}
-            variant="filled"
-            name="description"
-            fullWidth
-            defaultValue={description}
-          />
-        </Box>
-        <Box>
-          <TextField
-            error={errors?.slug}
-            id="slug"
-            label="Slug"
-            helperText={errors?.slug ? "Slug is required" : null}
-            variant="filled"
-            name="slug"
-            fullWidth
-            defaultValue={slug}
-          />
-        </Box>
-        <Box>
-          <TextField
-            error={errors?.markdown}
-            id="markdown"
-            label="Markdown"
-            helperText={errors?.markdown ? <em>Markdown is required</em> : null}
-            variant="filled"
-            multiline
-            rows={10}
-            name="markdown"
-            fullWidth
-            defaultValue={markdown}
-          />
-        </Box>
-        <Stack direction={"row"} spacing={2} justifyContent="flex-end">
-          <Button
-            component={Link}
-            to={`/blog/${slug}`}
-            target="_blank"
-            color="secondary"
-          >
-            Preview
-          </Button>
-          <Button type="submit" variant="contained">
-            Save Post
-          </Button>
-        </Stack>
-      </Stack>
-    </Form>
+    <EditPost
+      errors={errors}
+      authorId={authorId}
+      isPublished={isPublished}
+      setIsPublished={setIsPublished}
+      date={date}
+      setDate={setDate}
+      markdown={markdown}
+      handleEditorChange={handleEditorChange}
+      title={title}
+      description={description}
+      slug={slug}
+      imageUrl={imageUrl}
+      imageAlt={imageAlt}
+      tags={tags?.join(", ") || ""}
+    />
   );
 }

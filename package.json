@@ -8,7 +8,7 @@
     "dev": "cross-env NODE_ENV=development netlify dev",
     "firebase": "firebase",
     "firebase:dev": "firebase emulators:start",
-    "postinstall": "remix setup node && npx -y replace \"import {URL} from 'url'\" \"import {Url} from 'url'\" ./node_modules/@mdx-js/mdx/lib/plugin/recma-document.js -r",
+    "postinstall": "remix setup node",
     "start": "cross-env NODE_ENV=production netlify dev",
     "netlify": "netlify"
   },

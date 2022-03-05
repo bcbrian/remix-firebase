@@ -41,6 +41,7 @@ export default function handleRequest(
   styles.forEach(({ key, ids, css }) => {
     const emotionKey = `${key} ${ids.join(" ")}`;
     const newStyleTag = `<style data-emotion="${emotionKey}">${css}</style>`;
+    console.log(newStyleTag);
     stylesHTML = `${stylesHTML}${newStyleTag}`;
   });
 

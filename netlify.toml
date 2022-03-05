@@ -7,6 +7,10 @@
   command = "remix watch"
   port = 3000
 
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["react", "remix"]
+
 [[redirects]]
   from = "/*"
   to = "/.netlify/functions/server"

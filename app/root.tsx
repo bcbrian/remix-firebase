@@ -1,21 +1,27 @@
+import * as React from "react";
 import {
   LoaderFunction,
-  MetaFunction,
   ScrollRestoration,
   useLoaderData,
+  Links,
+  LiveReload,
+  Outlet,
+  useCatch,
+  Meta,
+  Scripts,
 } from "remix";
-import { Links, LiveReload, Outlet, useCatch, Meta, Scripts } from "remix";
 import globalStylesUrl from "~/styles/global.css";
 import { AuthProvider } from "~/state/AuthProvider";
-import { Stack, ThemeProvider } from "@mui/material";
 import { AppBar } from "~/components/AppBar";
 import { theme } from "./theme";
 import { AuthUser, getAuthUser, getUserToken } from "~/utils/session.server";
 import { AppPaper } from "./components/AppPaper";
-import { Typography } from "@mui/material";
-import { CacheProvider, withEmotionCache } from "@emotion/react";
-import { createEmotionCache } from "~/utils/createEmotionCache";
-import { unstable_useEnhancedEffect as useEnhancedEffect } from "@mui/material";
+import { withEmotionCache } from "@emotion/react";
+import {
+  Stack,
+  Typography,
+  unstable_useEnhancedEffect as useEnhancedEffect,
+} from "@mui/material";
 import { useContext } from "react";
 import ClientStyleContext from "~/theme/ClientStyleContext";
 
@@ -31,20 +37,6 @@ export function links() {
     },
   ];
 }
-
-export const meta: MetaFunction = () => {
-  const description = `Code Sagas is a place to learn a million and one ways to code.`;
-  return {
-    description,
-    keywords: "code,sagas,learn",
-    "twitter:image": "https://codesagas.com/social.png",
-    "twitter:card": "summary_large_image",
-    "twitter:creator": "@codesagas",
-    "twitter:site": "@codesagas",
-    "twitter:title": "Code Sagas",
-    "twitter:description": description,
-  };
-};
 
 interface DocumentProps {
   children: React.ReactNode;
@@ -117,7 +109,6 @@ export const loader: LoaderFunction = async ({ request }) => {
   return data;
 };
 
-const cache = createEmotionCache();
 function Providers({
   user,
   children,
@@ -129,9 +120,7 @@ function Providers({
 }) {
   return (
     <AuthProvider user={user} userToken={userToken}>
-      <CacheProvider value={cache}>
-        <ThemeProvider theme={theme}>{children}</ThemeProvider>
-      </CacheProvider>
+      {children}
     </AuthProvider>
   );
 }
@@ -156,7 +145,6 @@ function RootError({
 }) {
   return (
     <Document title={docTitle}>
-      <ThemeProvider theme={theme}>
         <Stack
           justifyContent={"center"}
           alignItems={"center"}
@@ -169,7 +157,6 @@ function RootError({
             <Typography>{message}</Typography>
           </AppPaper>
         </Stack>
-      </ThemeProvider>
     </Document>
   );
 }
